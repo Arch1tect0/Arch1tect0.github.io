@@ -2,43 +2,125 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>My Blog</title>
-  <style>
-    body { font-family: sans-serif; max-width: 700px; margin: 40px auto; line-height: 1.6; }
-    .post { margin-bottom: 60px; }
-    hr { margin: 40px 0; }
-  </style>
+  <title>The Binary Architect</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<div class="site">
 
-  <h1>Welcome</h1>
-  <p>Hey there! I'm the Binary Architect. I'm an independent thinker writing on various topics.</p>
+  <!-- ── Header ── -->
+  <header>
+    <h1>The Binary Architect</h1>
+    <p>Independent thinker writing on various topics.</p>
+  </header>
 
-  <div id="posts"></div>
+  <!-- ── Tag filters (built by JS) ── -->
+  <div id="tags"></div>
+  <hr>
 
-  <script>
-    // List your post files here
-    const posts = [
-      "blog/03-2026_Reborn_from_ashes.html"
-      // Add more like:
-      // "blog/second-post.html",
-      // "blog/third-post.html"
-    ];
+  <!-- ── Post list (built by JS) ── -->
+  <ul id="posts"></ul>
+  <p id="empty">no posts found.</p>
 
-    const container = document.getElementById("posts");
+</div>
+<script>
 
-    posts.forEach(url => {
-      fetch(url)
-        .then(response => response.text())
-        .then(html => {
-          const wrapper = document.createElement("div");
-          wrapper.className = "post";
-          wrapper.innerHTML = html;
-          container.appendChild(wrapper);
-          container.appendChild(document.createElement("hr"));
-        });
+  // ── Posts ──────────────────────────────────────
+  // Add one line per post. Format: MM-YYYY_Title.html
+  const POSTS = [
+    "blog/03-2026_Reborn_from_ashes.html",
+  ];
+
+  // ── State ──────────────────────────────────────
+  let all = [], activeTag = 'all';
+
+  // ── Init: load all posts then render ───────────
+  async function init() {
+    const res = await Promise.allSettled(POSTS.map(load));
+    all = res.filter(r => r.status === 'fulfilled')
+             .map(r => r.value)
+             .sort((a, b) => b.date - a.date);
+    buildTags();
+    render();
+  }
+
+  // ── Load: fetch a post and parse its metadata ──
+  async function load(url) {
+    const doc = new DOMParser().parseFromString(
+      await (await fetch(url)).text(), 'text/html'
+    );
+
+    // Title
+    const title = doc.querySelector('h1')?.textContent.trim() || url;
+
+    // Keywords: reads "keywords: a, b, c" from the page
+    let tags = [];
+    for (const el of doc.querySelectorAll('p, footer')) {
+      const m = el.textContent.match(/keywords\s*:\s*([^\n]+)/i);
+      if (m) { tags = m[1].split(',').map(t => t.trim().toLowerCase()); break; }
+    }
+
+    // Excerpt: first real paragraph
+    let excerpt = '';
+    for (const p of doc.querySelectorAll('p')) {
+      const t = p.textContent.trim();
+      if (t.length > 60 && !/keywords/i.test(t)) { excerpt = t.slice(0, 150) + '…'; break; }
+    }
+
+    // Date: from MM-YYYY in the filename
+    const m = url.match(/(\d{2})-(\d{4})/);
+    return { url, title, tags, excerpt, date: m ? new Date(+m[2], +m[1]-1) : new Date(0) };
+  }
+
+  // ── Tags: build filter buttons from all post tags
+  function buildTags() {
+    const counts = {};
+    all.forEach(p => p.tags.forEach(t => counts[t] = (counts[t]||0) + 1));
+
+    const box = document.getElementById('tags');
+    [['all','all posts'], ...Object.keys(counts).map(t => [t,t])].forEach(([tag, label], i) => {
+      const btn = Object.assign(document.createElement('button'), {
+        textContent: label, onclick: () => filter(tag)
+      });
+      btn.dataset.tag = tag;
+      if (i === 0) btn.classList.add('active');
+      box.appendChild(btn);
     });
-  </script>
+  }
 
+  // ── Filter: show only posts matching a tag ─────
+  function filter(tag) {
+    activeTag = tag;
+    document.querySelectorAll('#tags button').forEach(b =>
+      b.classList.toggle('active', b.dataset.tag === tag)
+    );
+    render();
+  }
+
+  // ── Render: draw the post list ─────────────────
+  function render() {
+    const list  = document.getElementById('posts');
+    const shown = activeTag === 'all' ? all : all.filter(p => p.tags.includes(activeTag));
+
+    list.innerHTML = '';
+    document.getElementById('empty').classList.toggle('visible', !shown.length);
+
+    shown.forEach(p => {
+      const li = document.createElement('li');
+      const date = p.date.getTime()
+        ? p.date.toLocaleDateString('en-US', { month:'short', year:'numeric' }) : '—';
+      li.innerHTML = `
+        <span class="date">${date}</span>
+        <div>
+          <a href="${p.url}">${p.title}</a>
+          <p class="excerpt">${p.excerpt}</p>
+          <div class="post-tags">${p.tags.map(t => `<span onclick="filter('${t}')">${t}</span>`).join('')}</div>
+        </div>`;
+      list.appendChild(li);
+    });
+  }
+
+  init();
+</script>
 </body>
 </html>
