@@ -45,3 +45,20 @@ hr { border: none; border-top: 1px solid #E4E2DC; margin-bottom: 32px; }
 /* ── Empty state ─────────────────────── */
 #empty { display: none; text-align: center; padding: 48px 0; font-family: 'SF Mono', monospace; font-size: 13px; color: #9A9890; }
 #empty.visible { display: block; }
+
+/* ── Post page ───────────────────────── */
+body { max-width: 680px; margin: 0 auto; padding: 56px 24px 80px; }
+
+/* back link */
+body > a { font-family: 'SF Mono', monospace; font-size: 11px; color: #9A9890; text-decoration: none; display: block; margin-bottom: 48px; }
+body > a:hover { color: #6B63E8; }
+
+/* title */
+body > h1 { font-family: Georgia, serif; font-size: 28px; font-weight: normal; margin-bottom: 32px; line-height: 1.25; }
+
+/* body text */
+body > p { font-size: 16px; line-height: 1.75; margin-bottom: 20px; color: #2E2D2B; }
+
+/* meta footer (keywords, author, date) */
+body > hr { margin: 48px 0 20px; }
+body > p:last-child { font-family: 'SF Mono', monospace; font-size: 11px; color: #C0BEB8; line-height: 1.8; }
