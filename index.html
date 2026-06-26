@@ -60,7 +60,8 @@
       const m = el.textContent.match(/keywords\s*:\s*([^\n]+)/i);
       if (m) { tags = m[1].split(',').map(t => t.trim().toLowerCase()); break; }
     }
-    if (tags.includes('draft')) throw new Error('draft');  // If I add the "draft" keyword, it will automatically drop it.
+    
+    //if (tags.includes('draft')) throw new Error('draft');  // If I add the "draft" keyword, it will automatically drop it.
     // Excerpt: first real paragraph
     let excerpt = '';
     for (const p of doc.querySelectorAll('p')) {
